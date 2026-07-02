@@ -20,6 +20,11 @@ side by side.
 | 4 | **UI replication** — Vercel landing clone | [`ui_replication/`](ui_replication) | Static HTML/CSS | `8002` |
 | 5 | **Tetris** — browser game | [`tetris/`](tetris) | Static HTML/CSS/JS + Canvas | `8001` |
 
+> **Before/after pair:** [`bug_project_bak/`](bug_project_bak) is the *unfixed*
+> snapshot of the TaskList — it crashes on boot. Compare its
+> `routes/tasks.js` against [`bug_project/`](bug_project) to see the bug and the
+> fix side by side. See [Appendix: the TaskList bug](#appendix-the-tasklist-bug).
+
 A tiny shared static-server helper, [`static.js`](static.js), serves any of the
 static demos on a port of your choice.
 
@@ -125,11 +130,12 @@ zcode-demo/
 ├── slide_deck/          # 1. Conference slide deck (static)
 │   ├── index.html
 │   └── server.js
-├── bug_project/         # 2. Debugged TaskList (Express)
+├── bug_project/         # 2. Debugged TaskList (Express) — FIXED
 │   ├── server.js
 │   ├── routes/tasks.js
 │   ├── data/store.js
 │   └── public/          # index.html, app.js, styles.css
+├── bug_project_bak/     #    unfixed snapshot of #2 — crashes on boot (see appendix)
 ├── booth_leads/         # 3. Booth lead capture (Express + SQLite)
 │   ├── server.js
 │   ├── routes/leads.js
@@ -153,3 +159,40 @@ zcode-demo/
 - Built as a live booth demo; benchmark and pricing figures referenced in the
   slide deck come from Z.ai's published materials and should be rechecked before
   presentation.
+
+---
+
+## Appendix: the TaskList bug
+
+`bug_project/` and `bug_project_bak/` are the same app in two states — **fixed**
+and **unfixed** — kept side by side to show a debugging loop end-to-end.
+
+**Symptom (unfixed):** the server crashes immediately on boot with
+
+```
+TypeError: Router.use() requires a middleware function but got a Object
+    at ... (bug_project_bak/server.js:13:5)
+```
+
+**Root cause:** in [`bug_project_bak/routes/tasks.js`](bug_project_bak/routes/tasks.js)
+the router is exported wrapped in an object…
+
+```js
+module.exports = { router };   // ❌ an Object, not a router
+```
+
+…but `server.js` mounts it expecting the router itself:
+
+```js
+const tasksRouter = require('./routes/tasks');
+app.use('/api/tasks', tasksRouter);   // Express wants a function, gets an Object
+```
+
+**The fix:** export the router directly, matching the convention used by the
+working `booth_leads` app — see [`bug_project/routes/tasks.js`](bug_project/routes/tasks.js):
+
+```js
+module.exports = router;   // ✅ the router function Express expects
+```
+
+That single-line change takes the app from a boot crash to a working CRUD server.

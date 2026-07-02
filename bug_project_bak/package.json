@@ -1,0 +1,15 @@
+{
+  "name": "tasklist-app",
+  "version": "1.0.0",
+  "description": "A tiny full-stack task list app (Express + vanilla JS frontend)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  },
+  "author": "",
+  "license": "MIT"
+}
