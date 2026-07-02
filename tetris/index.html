@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Falling Blocks · Built with GLM-5.2 + Zcode</title>
+<style>
+  :root {
+    --bg: #0a0b14;
+    --bg-2: #11121f;
+    --panel: #161827;
+    --panel-2: #1d2032;
+    --border: rgba(255,255,255,.07);
+    --accent: #6c5ce7;   /* Zcode violet */
+    --accent2: #00d2c3;  /* teal */
+    --accent3: #ff7ab6;  /* pink */
+    --text: #ecedf5;
+    --muted: #9498b8;
+    --dim: #64688a;
+    --grad: linear-gradient(135deg, var(--accent) 0%, var(--accent3) 100%);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background:
+      radial-gradient(1200px 700px at 80% -10%, rgba(108,92,231,.16), transparent 60%),
+      radial-gradient(1000px 600px at -10% 110%, rgba(0,210,195,.10), transparent 55%),
+      var(--bg);
+    color: var(--text);
+    font-family: "Segoe UI", "Inter", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    padding: 14px 16px 10px;
+    user-select: none;
+    -webkit-font-smoothing: antialiased;
+  }
+  /* ---- Bootstrap-4-style grid: 3 columns, full viewport width ---- */
+  .row-grid {
+    display: flex;
+    flex-wrap: nowrap;          /* keep all 3 cols on one row (like .row no-wrap on xl) */
+    align-items: stretch;
+    flex: 1 1 auto;
+    width: 100%;
+    min-height: 0;
+    gap: 0;
+  }
+  .col-ad  { flex: 0 0 22%; max-width: 22%; display: flex; flex-direction: column; justify-content: center; gap: 16px; padding: 0 20px; }
+  .col-game{ flex: 0 0 56%; max-width: 56%; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; min-height: 0; }
+  .col-ad.right { align-items: flex-start; }
+
+  /* center column: score → board → buttons, all fitting in viewport */
+  .game-col-inner {
+    display: flex; flex-direction: column; align-items: center;
+    height: 100%; width: 100%;
+    min-height: 0;            /* allow children to shrink */
+    padding: 8px 0 0;
+  }
+  .stage {
+    position: relative;
+    background: linear-gradient(180deg, var(--panel) 0%, var(--bg-2) 100%);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 14px;
+    box-shadow: 0 18px 50px rgba(0,0,0,.45);
+    display: flex; align-items: center; justify-content: center;
+    flex: 1 1 auto;           /* board takes ALL remaining vertical space */
+    min-height: 0;            /* but can shrink so buttons stay in view */
+    width: fit-content;
+  }
+  canvas#game {
+    display: block;
+    background: #05060d;
+    border-radius: 8px;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.05);
+    /* fit the stage's available height; width follows the board's 1:2 aspect ratio */
+    height: 100%;
+    max-height: 100%;
+    width: auto;
+    max-width: 100%;
+    object-fit: contain;
+  }
+  .sidebar { display: none; }   /* legacy sidebar replaced by the grid columns */
+  .title { font-size: 34px; font-weight: 800; letter-spacing: .5px; line-height: 1.05; }
+  .title span { color: var(--accent2); }
+  .card {
+    background: linear-gradient(180deg, var(--panel) 0%, var(--bg-2) 100%);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 20px;
+  }
+  .grad-text { background: var(--grad); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent; }
+
+  /* ---- Brand header ---- */
+  .brand-bar {
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    margin-bottom: 14px;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  .brand-bar .logo { width: 12px; height: 12px; border-radius: 50%; background: var(--grad); box-shadow: 0 0 14px rgba(108,92,231,.7); flex-shrink: 0; }
+  .brand-bar .name { font-size: 26px; font-weight: 800; letter-spacing: .02em; }
+  .brand-bar .x { color: var(--dim); font-weight: 300; }
+  .brand-bar .tag {
+    font-size: 13px; color: var(--accent2); letter-spacing: .1em; text-transform: uppercase;
+    border: 1px solid var(--border); background: var(--panel); padding: 7px 14px; border-radius: 99px;
+  }
+  .brand-bar .tag b { color: var(--text); font-weight: 700; }
+
+  /* ---- Facts card (ad content) ---- */
+  .facts { list-style: none; display: grid; gap: 11px; }
+  .facts li {
+    font-size: 14px; color: var(--muted); line-height: 1.45;
+    display: flex; gap: 9px; align-items: baseline;
+  }
+  .facts li b { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; color: var(--accent2); font-weight: 700; min-width: 38px; flex-shrink: 0; margin-right: 4px; }
+  .facts .card-label {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--dim);
+    margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
+  }
+  .facts .card-label::before { content: ""; width: 18px; height: 2px; background: var(--accent2); border-radius: 2px; }
+
+  /* ---- Ad panels (left & right columns) ---- */
+  .ad-hero { line-height: 1.05; }
+  .ad-hero .big { font-size: clamp(40px, 4.4vw, 64px); font-weight: 800; letter-spacing: -.02em; }
+  .ad-hero .sub { font-size: clamp(15px, 1.5vw, 20px); color: var(--muted); margin-top: 14px; line-height: 1.5; max-width: 24ch; }
+  .ad-feature {
+    background: linear-gradient(180deg, var(--panel) 0%, var(--bg-2) 100%);
+    border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px;
+    position: relative; overflow: hidden;
+  }
+  .ad-feature::before { content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background: var(--grad); opacity:.8; }
+  .ad-feature .stat-big { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: clamp(34px,3.6vw,52px); font-weight: 800; letter-spacing: -.02em; line-height: 1; }
+  .ad-feature .stat-lbl { font-size: 13px; color: var(--muted); margin-top: 8px; line-height: 1.45; }
+  .ad-feature .stat-lbl b { color: var(--text); font-weight: 600; }
+  .ad-eyebrow {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--accent2);
+    display: flex; align-items: center; gap: 9px; margin-bottom: 8px;
+  }
+  .ad-eyebrow::before { content:""; width: 22px; height: 2px; background: var(--accent2); border-radius: 2px; }
+  .ad-tags { display:flex; gap: 9px; flex-wrap: wrap; margin-top: 18px; }
+  .ad-tags .t { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 12px; color: var(--text); border:1px solid var(--border); background: var(--panel); padding: 7px 13px; border-radius: 99px; }
+  .ad-tags .t b { color: var(--accent2); font-weight: 700; }
+  .ad-link { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 15px; color: var(--accent2); text-decoration: none; margin-top: 14px; display: inline-block; }
+  .ad-link:hover { text-decoration: underline; }
+  /* center column scoreboard (stats sit above the board) */
+  .score-row { display:flex; gap: 14px; justify-content: center; margin-bottom: 12px; flex-shrink: 0; }
+  .score-pill { background: linear-gradient(180deg, var(--panel), var(--bg-2)); border:1px solid var(--border); border-radius: 12px; padding: 10px 22px; text-align:center; min-width: 110px; }
+  .score-pill .k { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+  .score-pill .v { font-size: 28px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .btn-row { display:flex; gap: 14px; margin-top: 14px; width: 100%; max-width: 440px; flex-shrink: 0; }
+
+  /* ---- Footer ---- */
+  .foot {
+    margin-top: 14px; display: flex; gap: 26px; align-items: center; flex-wrap: wrap; justify-content: center;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 14px;
+  }
+  .foot a { color: var(--accent2); text-decoration: none; }
+  .foot a:hover { text-decoration: underline; }
+  .foot .try { color: var(--dim); }
+  .stat { display: flex; justify-content: space-between; align-items: baseline; margin: 8px 0; }
+  .stat .k { color: var(--muted); font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
+  .stat .v { font-size: 30px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .hint { font-size: 15px; color: var(--muted); line-height: 2.05; }
+  .hint b { color: var(--text); display: inline-block; min-width: 72px; font-weight: 600; }
+  button.btn {
+    margin-top: 4px;
+    width: 100%;
+    border: none;
+    cursor: pointer;
+    font-size: 17px;
+    font-weight: 700;
+    color: #fff;
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--accent), #8e7bff);
+    box-shadow: 0 8px 20px rgba(108,92,231,.35);
+    transition: transform .08s ease, filter .15s ease;
+  }
+  button.btn:hover { filter: brightness(1.08); }
+  button.btn:active { transform: translateY(1px); }
+  .overlay {
+    position: absolute;
+    inset: 14px;
+    border-radius: 8px;
+    background: rgba(10,11,24,.86);
+    backdrop-filter: blur(3px);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    text-align: center;
+    padding: 16px;
+  }
+  .overlay.show { display: flex; }
+  .overlay h2 { font-size: 34px; letter-spacing: .5px; }
+  .overlay p { color: var(--muted); font-size: 16px; }
+  .overlay .big { font-size: 40px; font-weight: 800; color: var(--accent2); }
+  kbd {
+    background: var(--panel-2); border: 1px solid #2a2d48; border-bottom-width: 2px;
+    border-radius: 6px; padding: 2px 9px; font-size: 13px; color: var(--text);
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (max-width: 1100px) {
+    /* collapse 3-column grid into a single stacked column on smaller screens */
+    .row-grid { flex-direction: column; align-items: center; }
+    .col-ad, .col-game { flex: 0 0 auto; max-width: 460px; width: 100%; }
+    .col-ad { padding: 0; }
+    .stage { height: auto; }
+    canvas#game { height: auto; width: 100%; max-width: 400px; }
+  }
+  button.btn.ai {
+    background: linear-gradient(135deg, var(--panel-2), #2a2d48);
+    box-shadow: 0 6px 16px rgba(0,0,0,.3);
+    font-size: 16px;
+  }
+  button.btn.ai.on {
+    background: var(--grad);
+    box-shadow: 0 8px 20px rgba(108,92,231,.45);
+    color: #0a0b14;
+  }
+  .ai-badge {
+    position: absolute; top: 28px; left: 28px;
+    background: var(--accent2); color: #0a0b14;
+    font-size: 14px; font-weight: 800; letter-spacing: .5px;
+    padding: 6px 14px; border-radius: 20px;
+    display: none;
+    box-shadow: 0 4px 12px rgba(0,210,195,.4);
+    animation: pulse 1.2s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .55; } }
+</style>
+</head>
+<body>
+  <div class="brand-bar">
+    <span class="logo"></span>
+    <span class="name"><span class="grad-text">GLM-5.2</span> <span class="x">+</span> Zcode</span>
+    <span class="tag">Built in <b>one shot</b> with <b>/goal</b></span>
+  </div>
+
+  <div class="row-grid">
+    <!-- LEFT AD COLUMN -->
+    <div class="col-ad">
+      <div class="ad-eyebrow">Built in one shot</div>
+      <div class="ad-hero">
+        <div class="big"><span class="grad-text">GLM-5.2</span><br>+ Zcode</div>
+        <p class="sub">Turn a vague idea into a working demo — without leaving the agent loop. This very game was shipped in one <code style="font-family:inherit;color:var(--accent2)">/goal</code>.</p>
+      </div>
+      <div class="ad-feature">
+        <div class="stat-big grad-text">1M</div>
+        <div class="stat-lbl"><b>Token context.</b> 5× over GLM-5.1. Built for long, messy agent runs — not just to accept more tokens.</div>
+      </div>
+      <div class="ad-feature">
+        <div class="stat-big accent2" style="color:var(--accent2)">MIT</div>
+        <div class="stat-lbl"><b>Open weights.</b> No regional limits. Self-host on vLLM, SGLang, or transformers.</div>
+      </div>
+    </div>
+
+    <!-- CENTER GAME COLUMN -->
+    <div class="col-game">
+      <div class="game-col-inner">
+        <div class="score-row">
+          <div class="score-pill"><div class="k">Score</div><div class="v" id="score">0</div></div>
+          <div class="score-pill"><div class="k">Lines</div><div class="v" id="lines">0</div></div>
+          <div class="score-pill"><div class="k">Level</div><div class="v" id="level">1</div></div>
+        </div>
+        <div class="stage">
+          <canvas id="game" width="500" height="1000"></canvas>
+          <div class="ai-badge" id="aiBadge">GLM-5.2 IS PLAYING</div>
+          <div class="overlay" id="overlay">
+            <h2 id="ovTitle">Game Over</h2>
+            <p id="ovText">Press <kbd>R</kbd> or click Restart</p>
+            <div class="big" id="ovScore" style="display:none"></div>
+            <button class="btn" style="width:auto;padding:10px 22px;margin-top:6px" onclick="restart()">Restart</button>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn ai" id="aiBtn" onclick="toggleAI()" style="flex:1">▶ Start AI  (Q)</button>
+          <button class="btn" onclick="restart()" style="flex:1">New Game</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT AD COLUMN -->
+    <div class="col-ad right">
+      <div class="ad-eyebrow">Why it's fast</div>
+      <div class="ad-feature">
+        <div class="stat-big" style="color:var(--accent3)">1.5×</div>
+        <div class="stat-lbl"><b>Effective quota.</b> GLM-5.2 via the Coding Plan in Zcode runs at a 0.67× multiplier — more requests from the same plan.</div>
+      </div>
+      <div class="ad-feature">
+        <div class="stat-big grad-text">62.1</div>
+        <div class="stat-lbl"><b>SWE-bench Pro.</b> Top-ranked open-weights coding model — within reach of the frontier.</div>
+      </div>
+      <div class="ad-feature">
+        <div class="stat-big" style="color:var(--accent2)">👁</div>
+        <div class="stat-lbl"><b>Vision-in-the-loop.</b> Wire GLM-5V-Turbo over MCP for screenshot-based UI feedback. See it, fix it, verify it.</div>
+      </div>
+      <div class="ad-tags">
+        <span class="t"><b>/goal</b></span>
+        <span class="t">plan → code → verify</span>
+        <span class="t">agentic</span>
+      </div>
+      <a class="ad-link" href="https://z.ai" target="_blank" rel="noopener">z.ai →</a>
+      <a class="ad-link" href="https://zcode.z.ai/en" target="_blank" rel="noopener">zcode.z.ai →</a>
+      <div style="color:var(--dim); font-family:ui-monospace,Menlo,Consolas,monospace; font-size:12px; margin-top:4px;">Try it at the booth</div>
+    </div>
+  </div>
+
+<script>
+"use strict";
+// ---- Config ----
+const COLS = 10, ROWS = 20, CELL = 50;
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+const AI_TICK = 110; // ms per AI step (watchable, fixed speed)
+// Dellacherie-style heuristic weights (known-good published values)
+const W = { height: -0.510, lines: 0.760, holes: -0.357, bump: -0.184 };
+
+// ---- Tetrominoes: explicit rotation states (coords within a 4x4 box) ----
+// Bulletproof: avoids matrix-rotation math entirely.
+const PIECES = {
+  I: { color: "#00cec9", rot: [
+    [[0,1],[1,1],[2,1],[3,1]], [[2,0],[2,1],[2,2],[2,3]],
+    [[0,2],[1,2],[2,2],[3,2]], [[1,0],[1,1],[1,2],[1,3]] ] },
+  O: { color: "#fdcb6e", rot: [ [[1,0],[2,0],[1,1],[2,1]] ] },
+  T: { color: "#a29bfe", rot: [
+    [[1,0],[0,1],[1,1],[2,1]], [[1,0],[1,1],[2,1],[1,2]],
+    [[0,1],[1,1],[2,1],[1,2]], [[1,0],[0,1],[1,1],[1,2]] ] },
+  S: { color: "#55efc4", rot: [
+    [[1,0],[2,0],[0,1],[1,1]], [[1,0],[1,1],[2,1],[2,2]],
+    [[1,1],[2,1],[0,2],[1,2]], [[0,0],[0,1],[1,1],[1,2]] ] },
+  Z: { color: "#ff7675", rot: [
+    [[0,0],[1,0],[1,1],[2,1]], [[2,0],[1,1],[2,1],[1,2]],
+    [[0,1],[1,1],[1,2],[2,2]], [[1,0],[0,1],[1,1],[0,2]] ] },
+  J: { color: "#74b9ff", rot: [
+    [[0,0],[0,1],[1,1],[2,1]], [[1,0],[2,0],[1,1],[1,2]],
+    [[0,1],[1,1],[2,1],[2,2]], [[1,0],[1,1],[0,2],[1,2]] ] },
+  L: { color: "#fab1a0", rot: [
+    [[2,0],[0,1],[1,1],[2,1]], [[1,0],[1,1],[1,2],[2,2]],
+    [[0,1],[1,1],[2,1],[0,2]], [[0,0],[1,0],[1,1],[1,2]] ] }
+};
+const KEYS = Object.keys(PIECES);
+
+// ---- State ----
+let grid, cur, score, lines, level, dropAcc, dropInt, gameOver, paused, lastTime, rafId;
+let aiMode = false, aiAcc = 0, target = null;
+
+function newGrid() { return Array.from({length: ROWS}, () => Array(COLS).fill(null)); }
+
+function randomPiece() {
+  const k = KEYS[(Math.random() * KEYS.length) | 0];
+  return { type: k, rot: 0, x: 3, y: -1 }; // spawn near top, centered-ish
+}
+
+function cells(p) {
+  return PIECES[p.type].rot[p.rot % PIECES[p.type].rot.length]
+    .map(([cx, cy]) => [p.x + cx, p.y + cy]);
+}
+
+function collides(p, dx=0, dy=0, dr=0) {
+  const rotCount = PIECES[p.type].rot.length;
+  const nr = ((p.rot + dr) % rotCount + rotCount) % rotCount;
+  for (const [cx, cy] of PIECES[p.type].rot[nr]) {
+    const x = p.x + cx + dx, y = p.y + cy + dy;
+    if (x < 0 || x >= COLS || y >= ROWS) return true;
+    if (y >= 0 && grid[y][x]) return true;
+  }
+  return false;
+}
+
+// ---- AI engine (Dellacherie-style 1-piece heuristic) ----
+function cloneGrid() { return grid.map(row => row.slice()); }
+// Score a board state with the 4-feature heuristic. Higher = better.
+function evaluateBoard(g) {
+  let aggHeight = 0, holes = 0, bump = 0, lines = 0;
+  const heights = [];
+  for (let x = 0; x < COLS; x++) {
+    let h = 0, found = false;
+    for (let y = 0; y < ROWS; y++) {
+      if (g[y][x]) { if (!found) { h = ROWS - y; found = true; } }
+      else if (found) holes++;
+    }
+    heights.push(h); aggHeight += h;
+  }
+  for (let i = 0; i < COLS - 1; i++) bump += Math.abs(heights[i] - heights[i + 1]);
+  for (let y = 0; y < ROWS; y++) if (g[y].every(c => c)) lines++;
+  return aggHeight * W.height + lines * W.lines + holes * W.holes + bump * W.bump;
+}
+// Simulate dropping (type, rot, x) onto a copy of the grid; return {score, y}.
+function simulateLanding(type, rot, x) {
+  const cells = PIECES[type].rot[rot % PIECES[type].rot.length];
+  // reject placements with any cell off the left/right edge
+  for (const [cx] of cells) { const gx = x + cx; if (gx < 0 || gx >= COLS) return null; }
+  let y = -2;
+  // find landing y (top of bounding box)
+  while (true) {
+    let blocked = false;
+    for (const [cx, cy] of cells) {
+      const gx = x + cx, gy = y + 1 + cy;
+      if (gy >= ROWS || (gy >= 0 && grid[gy][gx])) { blocked = true; break; }
+    }
+    if (blocked) break;
+    y++;
+    if (y > ROWS) return null; // safety: shouldn't happen
+  }
+  // commit to clone
+  const g = cloneGrid();
+  for (const [cx, cy] of cells) {
+    const gx = x + cx, gy = y + cy;
+    if (gy < 0) return null; // lands above board -> skip
+    g[gy][gx] = "#888";
+  }
+  return { score: evaluateBoard(g), y };
+}
+// Plan the best target placement for the current piece: {rot, x} or null.
+function planMove() {
+  if (!cur) return null;
+  const rotCount = PIECES[cur.type].rot.length;
+  let best = null, bestScore = -Infinity;
+  for (let r = 0; r < rotCount; r++) {
+    for (let x = -2; x <= COLS + 2; x++) {
+      const res = simulateLanding(cur.type, r, x);
+      if (!res) continue;
+      if (res.score > bestScore) { bestScore = res.score; best = { rot: r, x }; }
+    }
+  }
+  return best;
+}
+
+function lock() {
+  const color = PIECES[cur.type].color;
+  for (const [x, y] of cells(cur)) {
+    if (y < 0) { endGame(); return; } // locked above the board -> game over
+    grid[y][x] = color;
+  }
+  clearLines();
+  cur = randomPiece();
+  if (collides(cur)) { endGame(); return; } // no room to spawn
+  if (aiMode) target = planMove();
+}
+
+function clearLines() {
+  let cleared = 0;
+  for (let r = ROWS - 1; r >= 0; r--) {
+    if (grid[r].every(c => c)) {
+      grid.splice(r, 1);
+      grid.unshift(Array(COLS).fill(null));
+      cleared++; r++; // recheck same index (now shifted)
+    }
+  }
+  if (cleared > 0) {
+    const pts = [0, 100, 300, 500, 800][cleared] * level;
+    score += pts;
+    lines += cleared;
+    const newLevel = Math.floor(lines / 10) + 1;
+    if (newLevel !== level) { level = newLevel; dropInt = Math.max(80, 800 - (level - 1) * 65); }
+    updateHud();
+  }
+}
+
+// ---- Actions ----
+function move(dx) { if (!collides(cur, dx, 0)) { cur.x += dx; return true; } return false; }
+function softDrop() { if (!collides(cur, 0, 1)) { cur.y++; score += 1; updateHud(); } else lock(); dropAcc = 0; }
+function hardDrop() {
+  let d = 0; while (!collides(cur, 0, d + 1)) d++;
+  cur.y += d; score += d * 2; updateHud(); lock(); dropAcc = 0;
+}
+function rotate() {
+  // simple wall-kick: try kick offsets
+  const kicks = [0, -1, 1, -2, 2];
+  for (const k of kicks) { if (!collides(cur, k, 0, 1)) { cur.x += k; cur.rot = (cur.rot + 1) % PIECES[cur.type].rot.length; return true; } }
+  return false;
+}
+
+// ---- AI step: one atomic, human-like move toward target per tick ----
+function aiStep() {
+  if (!target) { target = planMove(); if (!target) { hardDrop(); return; } }
+  const rotCount = PIECES[cur.type].rot.length;
+  const curRot = cur.rot;
+  // 1) rotate toward target (clockwise only; wraps modulo)
+  if (curRot !== target.rot) { rotate(); return; }
+  // 2) slide toward target x
+  if (cur.x < target.x && move(1)) return;
+  if (cur.x > target.x && move(-1)) return;
+  // 3) aligned -> drop it
+  hardDrop();
+}
+
+// ---- Rendering ----
+function shade(hex, amt) { // amt: -1..1 (darken/lighten)
+  const n = parseInt(hex.slice(1), 16);
+  let r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+  const f = amt < 0 ? 0 : 255;
+  const t = Math.abs(amt);
+  r = Math.round((f - r) * t + r); g = Math.round((f - g) * t + g); b = Math.round((f - b) * t + b);
+  return `rgb(${r},${g},${b})`;
+}
+function drawCell(x, y, color) {
+  const px = x * CELL, py = y * CELL;
+  ctx.fillStyle = color;
+  ctx.fillRect(px + 1, py + 1, CELL - 2, CELL - 2);
+  ctx.fillStyle = shade(color, 0.35);
+  ctx.fillRect(px + 1, py + 1, CELL - 2, 4);          // top highlight
+  ctx.fillStyle = shade(color, -0.35);
+  ctx.fillRect(px + 1, py + CELL - 5, CELL - 2, 4);   // bottom shadow
+  ctx.strokeStyle = shade(color, -0.45);
+  ctx.lineWidth = 1;
+  ctx.strokeRect(px + 1.5, py + 1.5, CELL - 3, CELL - 3);
+}
+function drawGhost() {
+  let d = 0; while (!collides(cur, 0, d + 1)) d++;
+  if (d === 0) return;
+  ctx.save();
+  ctx.globalAlpha = 0.22;
+  for (const [x, y] of cells({...cur, y: cur.y + d})) {
+    if (y >= 0) { ctx.fillStyle = PIECES[cur.type].color; ctx.fillRect(x*CELL+2, y*CELL+2, CELL-4, CELL-4); }
+  }
+  ctx.restore();
+}
+function render() {
+  // background grid
+  ctx.fillStyle = "#0a0b18";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.strokeStyle = "rgba(255,255,255,.035)";
+  ctx.lineWidth = 1;
+  for (let x = 1; x < COLS; x++) { ctx.beginPath(); ctx.moveTo(x*CELL, 0); ctx.lineTo(x*CELL, ROWS*CELL); ctx.stroke(); }
+  for (let y = 1; y < ROWS; y++) { ctx.beginPath(); ctx.moveTo(0, y*CELL); ctx.lineTo(COLS*CELL, y*CELL); ctx.stroke(); }
+
+  // locked blocks
+  for (let y = 0; y < ROWS; y++)
+    for (let x = 0; x < COLS; x++)
+      if (grid[y][x]) drawCell(x, y, grid[y][x]);
+
+  if (!gameOver && cur) {
+    drawGhost();
+    for (const [x, y] of cells(cur)) if (y >= 0) drawCell(x, y, PIECES[cur.type].color);
+  }
+}
+
+// ---- HUD ----
+function updateHud() {
+  document.getElementById("score").textContent = score;
+  document.getElementById("lines").textContent = lines;
+  document.getElementById("level").textContent = level;
+}
+function showOverlay(title, text) {
+  document.getElementById("ovTitle").textContent = title;
+  document.getElementById("ovText").innerHTML = text;
+  document.getElementById("ovScore").style.display = "none";
+  document.getElementById("overlay").classList.add("show");
+}
+function hideOverlay() { document.getElementById("overlay").classList.remove("show"); }
+
+function endGame() {
+  gameOver = true;
+  cancelAnimationFrame(rafId);
+  document.getElementById("ovScore").style.display = "block";
+  document.getElementById("ovScore").textContent = score.toLocaleString();
+  showOverlay("Game Over", "Final score above.<br>Press <kbd>R</kbd> to play again");
+  render();
+}
+
+// ---- Loop ----
+function loop(t) {
+  if (gameOver) return;
+  rafId = requestAnimationFrame(loop);
+  if (lastTime == null) lastTime = t;
+  const dt = t - lastTime;
+  lastTime = t;
+  if (paused) { render(); return; }
+  if (aiMode) {
+    aiAcc += dt;
+    if (aiAcc >= AI_TICK) { aiAcc = 0; aiStep(); }
+  } else {
+    dropAcc += dt;
+    if (dropAcc >= dropInt) { dropAcc = 0; if (!collides(cur, 0, 1)) cur.y++; else lock(); }
+  }
+  render();
+}
+
+// ---- Restart ----
+function restart() {
+  grid = newGrid();
+  score = 0; lines = 0; level = 1;
+  dropAcc = 0; dropInt = 800; aiAcc = 0;
+  gameOver = false; paused = false; lastTime = null;
+  cur = randomPiece();
+  if (aiMode) target = planMove(); else target = null;
+  hideOverlay();
+  updateHud();
+  cancelAnimationFrame(rafId);
+  rafId = requestAnimationFrame(loop);
+}
+
+// ---- Input ----
+window.addEventListener("keydown", (e) => {
+  if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," "].includes(e.key)) e.preventDefault();
+  if (e.key === "r" || e.key === "R") { restart(); return; }
+  if (e.key === "q" || e.key === "Q") { toggleAI(); return; } // AI toggle hotkey
+  if (gameOver) return;
+  if (e.key === "p" || e.key === "P") {
+    paused = !paused;
+    if (paused) showOverlay("Paused", "Press <kbd>P</kbd> to resume"); else hideOverlay();
+    return;
+  }
+  if (paused || aiMode) return; // ignore manual input while AI is driving
+  switch (e.key) {
+    case "ArrowLeft": case "a": case "A": move(-1); break;
+    case "ArrowRight": case "d": case "D": move(1); break;
+    case "ArrowUp": case "w": case "W": rotate(); break;
+    case "ArrowDown": case "s": case "S": softDrop(); break;
+    case " ": hardDrop(); break;
+  }
+});
+
+// ---- AI toggle ----
+function toggleAI() {
+  if (gameOver) return;
+  aiMode = !aiMode;
+  aiAcc = 0; dropAcc = 0;
+  const badge = document.getElementById("aiBadge");
+  const btn = document.getElementById("aiBtn");
+  if (aiMode) {
+    target = planMove();
+    if (paused) { paused = false; hideOverlay(); } // AI unpause is fine
+    badge.style.display = "block";
+    btn.textContent = "■ Stop AI  (Q)";
+    btn.classList.add("on");
+  } else {
+    target = null;
+    badge.style.display = "none";
+    btn.textContent = "▶ Start AI  (Q)";
+    btn.classList.remove("on");
+  }
+}
+
+// ---- Boot ----
+restart();
+</script>
+</body>
+</html>

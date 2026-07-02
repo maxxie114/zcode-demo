@@ -1,0 +1,15 @@
+{
+  "name": "booth-leads",
+  "version": "1.0.0",
+  "description": "A tiny booth lead-capture app (Express + SQLite + vanilla JS frontend)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node --experimental-sqlite server.js",
+    "dev": "node --experimental-sqlite server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  },
+  "author": "",
+  "license": "MIT"
+}

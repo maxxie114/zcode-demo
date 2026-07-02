@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vercel — Agentic Infrastructure</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F8F9FA;
+    --ink: #000000;
+    --paper: #FFFFFF;
+    --muted: #6b6f76;
+    --line: #e6e8eb;
+    --nav-h: 64px;
+    --maxw: 1200px;
+    --sans: "Inter", "Segoe UI", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  /* ---------- Nav ---------- */
+  .nav {
+    height: var(--nav-h);
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    padding: 0 clamp(20px, 4vw, 48px);
+  }
+  .brand {
+    font-weight: 800;
+    font-size: 19px;
+    letter-spacing: -.02em;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--ink);
+    text-decoration: none;
+  }
+  .brand .mark {
+    width: 16px; height: 16px;
+    background: var(--ink);
+    clip-path: polygon(50% 0, 100% 100%, 0 100%);
+  }
+  .nav-menu {
+    display: flex;
+    align-items: center;
+    gap: 26px;
+    margin-left: 12px;
+  }
+  .nav-menu a {
+    color: #2a2d31;
+    text-decoration: none;
+    font-size: 14.5px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: opacity .15s ease;
+  }
+  .nav-menu a:hover { opacity: .55; }
+  .nav-menu .caret {
+    width: 9px; height: 9px;
+    border-right: 1.6px solid currentColor;
+    border-bottom: 1.6px solid currentColor;
+    transform: rotate(45deg) translateY(-2px);
+    opacity: .6;
+  }
+  .nav-right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  /* buttons */
+  .btn {
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1;
+    padding: 10px 18px;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background .15s ease, color .15s ease, border-color .15s ease, transform .1s ease;
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn-ghost { background: transparent; color: var(--ink); border-color: var(--line); }
+  .btn-ghost:hover { background: #f0f1f3; }
+  .btn-dark { background: var(--ink); color: var(--paper); }
+  .btn-dark:hover { background: #222; }
+  .nav-right .btn { padding: 9px 16px; }
+
+  /* ---------- Hero ---------- */
+  .hero {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 40px 24px 30px;
+  }
+  .hero h1 {
+    font-size: clamp(40px, 7vw, 84px);
+    font-weight: 800;
+    letter-spacing: -.035em;
+    line-height: 1.02;
+    color: var(--ink);
+  }
+  .triangle {
+    margin: clamp(28px, 5vh, 52px) auto clamp(30px, 5vh, 54px);
+    width: clamp(96px, 14vw, 150px);
+    aspect-ratio: 1 / 1;
+    background: var(--ink);
+    clip-path: polygon(50% 4%, 100% 100%, 0 100%);
+  }
+  .subhead {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    margin-bottom: clamp(28px, 4.5vh, 40px);
+  }
+  .subhead span {
+    font-size: clamp(11px, 1.35vw, 15px);
+    letter-spacing: .26em;
+    font-weight: 600;
+    color: #4a4e54;
+    text-transform: uppercase;
+  }
+  .hero-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .hero-actions .btn { padding: 13px 26px; font-size: 15px; }
+
+  /* ---------- Logos ---------- */
+  .logos {
+    border-top: 1px solid var(--line);
+    background: var(--bg);
+    padding: 26px clamp(20px, 4vw, 48px);
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: clamp(22px, 4vw, 56px);
+  }
+  .logo {
+    font-weight: 700;
+    color: #8a8f96;
+    font-size: 15.5px;
+    letter-spacing: .01em;
+    opacity: .9;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    user-select: none;
+    filter: grayscale(1);
+    transition: color .2s ease, opacity .2s ease;
+  }
+  .logo:hover { color: #555; opacity: 1; }
+
+  /* approximated wordmark treatments */
+  .logo.schwab { font-weight: 500; text-transform: uppercase; letter-spacing: .12em; font-size: 13px; }
+  .logo.doordash { font-weight: 800; text-transform: lowercase; font-size: 17px; }
+  .logo.openai { font-weight: 600; }
+  .logo.openai .glyph { width: 16px; height: 16px; }
+  .logo.supreme { font-weight: 800; font-style: italic; letter-spacing: .02em; font-size: 18px; padding: 2px 7px; border: 1.5px solid currentColor; }
+  .logo.weather { font-weight: 600; font-size: 14px; }
+  .logo.polymarket { font-weight: 700; font-size: 16px; }
+  .logo.polymarket .glyph { width: 14px; height: 14px; background: currentColor; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
+
+  /* ---------- Mobile ---------- */
+  .menu-toggle { display: none; background: none; border: 0; cursor: pointer; padding: 6px; }
+  .menu-toggle span {
+    display: block; width: 22px; height: 2px; background: var(--ink);
+    border-radius: 2px; margin: 5px 0;
+  }
+  @media (max-width: 860px) {
+    .nav-menu, .nav-right .btn-ghost { display: none; }
+    .menu-toggle { display: block; margin-left: auto; }
+    .nav-right .btn-dark { margin-left: auto; }
+    .hero { padding-top: 20px; }
+    .subhead span { letter-spacing: .18em; }
+    .logos { gap: 18px 26px; }
+    .logo { font-size: 13.5px; }
+  }
+</style>
+</head>
+<body>
+
+  <!-- ===== Nav ===== -->
+  <nav class="nav">
+    <a class="brand" href="#"><span class="mark"></span>Vercel</a>
+
+    <div class="nav-menu">
+      <a href="#">Products <i class="caret"></i></a>
+      <a href="#">Resources <i class="caret"></i></a>
+      <a href="#">Enterprise</a>
+      <a href="#">Pricing</a>
+    </div>
+
+    <div class="nav-right">
+      <a class="btn btn-ghost" href="#">Get a Demo</a>
+      <a class="btn btn-ghost" href="#">Log In</a>
+      <a class="btn btn-dark" href="#">Sign Up</a>
+      <button class="menu-toggle" aria-label="Open menu"><span></span><span></span><span></span></button>
+    </div>
+  </nav>
+
+  <!-- ===== Hero ===== -->
+  <main class="hero">
+    <h1>Agentic Infrastructure</h1>
+
+    <div class="triangle" aria-hidden="true"></div>
+
+    <div class="subhead">
+      <span>FOR CODING AGENTS</span>
+      <span>TO SHIP APPS AND AGENTS</span>
+      <span>AUTOMATED BY AGENTS</span>
+    </div>
+
+    <div class="hero-actions">
+      <a class="btn btn-dark" href="#">Deploy Now</a>
+      <a class="btn btn-ghost" href="#">Talk to Sales</a>
+    </div>
+  </main>
+
+  <!-- ===== Logos ===== -->
+  <footer class="logos">
+    <span class="logo openai">
+      <svg class="glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3">
+        <path d="M12 2c1.6 2.4 1.6 5.2 0 7.6M12 22c-1.6-2.4-1.6-5.2 0-7.6M2 12c2.4-1.6 5.2-1.6 7.6 0M22 12c-2.4 1.6-5.2 1.6-7.6 0M4.9 4.9c2.7.6 4.8 2.7 5.4 5.4M19.1 19.1c-2.7-.6-4.8-2.7-5.4-5.4M19.1 4.9c-.6 2.7-2.7 4.8-5.4 5.4M4.9 19.1c.6-2.7 2.7-4.8 5.4-5.4"/>
+      </svg>
+      OpenAI
+    </span>
+    <span class="logo doordash">doordash</span>
+    <span class="logo supreme">Supreme</span>
+    <span class="logo weather">The Weather Company</span>
+    <span class="logo polymarket"><span class="glyph"></span>Polymarket</span>
+  </footer>
+
+  <script>
+    // simple mobile menu placeholder behavior (toggles nav visibility)
+    document.querySelector('.menu-toggle')?.addEventListener('click', function () {
+      const m = document.querySelector('.nav-menu');
+      if (!m) return;
+      const open = m.style.display === 'flex';
+      m.style.display = open ? '' : 'flex';
+      m.style.position = open ? '' : 'absolute';
+      if (!open) {
+        m.style.top = 'var(--nav-h)';
+        m.style.left = '0';
+        m.style.right = '0';
+        m.style.flexDirection = 'column';
+        m.style.background = '#fff';
+        m.style.padding = '16px 24px';
+        m.style.borderBottom = '1px solid var(--line)';
+        m.style.marginLeft = '0';
+        m.style.gap = '16px';
+      }
+    });
+  </script>
+</body>
+</html>

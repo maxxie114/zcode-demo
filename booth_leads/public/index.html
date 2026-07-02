@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Booth Leads</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="app">
+    <h1>📣 Booth Leads</h1>
+    <p class="subtitle">Capture a visitor at the booth.</p>
+
+    <form id="lead-form" class="lead-form">
+      <label>
+        Name
+        <input id="name" type="text" placeholder="Visitor name" autocomplete="off" required />
+      </label>
+
+      <label>
+        Notes
+        <textarea id="notes" rows="4" placeholder="Who they are, what they asked, what they're interested in…"></textarea>
+      </label>
+
+      <div class="row">
+        <label class="grow">
+          Lead type
+          <select id="lead_type">
+            <option>Visitor</option>
+            <option>Customer</option>
+            <option>Founder</option>
+            <option>Engineer</option>
+            <option>Investor</option>
+            <option>Partner</option>
+          </select>
+        </label>
+
+        <label class="grow">
+          Priority
+          <select id="priority">
+            <option>Medium</option>
+            <option>Hot</option>
+            <option>Warm</option>
+            <option>Low</option>
+          </select>
+        </label>
+      </div>
+
+      <button type="submit">Save lead</button>
+      <p id="form-error" class="error" hidden></p>
+    </form>
+
+    <h2>Saved leads</h2>
+    <ul id="lead-list" class="lead-list"></ul>
+    <p id="empty-state" class="empty" hidden>No leads yet. Add the first visitor above!</p>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
