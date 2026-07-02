@@ -18,7 +18,7 @@ side by side.
 | 2 | **Debugged TaskList** — full-stack CRUD, fixed live | [`bug_project/`](bug_project) | Node + Express | `3000` |
 | 3 | **Booth lead capture** — SQLite-backed | [`booth_leads/`](booth_leads) | Node + Express + SQLite | `3000` |
 | 4 | **UI replication** — Vercel landing clone | [`ui_replication/`](ui_replication) | Static HTML/CSS | `8002` |
-| 5 | **Tetris** — browser game | [`tetris/`](tetris) | Static HTML/CSS/JS + Canvas | `8001` |
+| 5 | **Ad-Tetris + AI** — branded Tetris with autoplay | [`tetris/`](tetris) | Static HTML/CSS/JS + Canvas | `8001` |
 
 > **Before/after pair:** [`bug_project_bak/`](bug_project_bak) is the *unfixed*
 > snapshot of the TaskList — it crashes on boot. Compare its
@@ -116,10 +116,27 @@ A static recreation of the Vercel "Agentic Infrastructure" landing page, built
 from a reference screenshot to demonstrate visual replication. Single
 self-contained HTML file, no build step.
 
-### 5. `tetris/` — Falling Blocks
-A complete browser Tetris (canvas) in a single HTML file: explicit rotation
-states, ghost piece, wall kicks, soft/hard drop, line-clear scoring, and levels.
-No dependencies. Great for a hands-on "walk up and play" station.
+### 5. `tetris/` — Ad-Tetris + autoplay AI
+Not just Tetris — it pulls triple duty as a **game, an advertisement, and an AI
+demo**, all in one self-contained HTML file:
+
+- **Tetris engine** — full canvas game with explicit per-piece rotation states
+  (no matrix math), wall kicks, ghost piece, soft/hard drop, line-clear scoring,
+  and levels. Playable by hand with `←/→` move, `↑/W` rotate, `↓/S` soft drop,
+  `Space` hard drop, `P` pause, `R` restart.
+- **Advertisement surface** — a 3-column layout frames the board with branded
+  GLM-5.2 + Zcode ad panels: a hero ("Built in one shot with /goal"), stat cards
+  (1M context, MIT open weights, 1.5× effective quota, SWE-bench Pro 62.1,
+  vision-in-the-loop), `/goal` tags, and links to z.ai / zcode.z.ai. So the game
+  advertises the product while visitors play.
+- **Autoplay AI** — toggle with the **Start AI** button or `Q`. A
+  **Dellacherie-style one-piece heuristic** plans each move: it simulates every
+  rotation × column placement (`simulateLanding`), scores each resulting board on
+  four features — aggregate height, completed lines, holes, bumpiness
+  (`evaluateBoard`) with the classic published weights
+  (`-0.510, 0.760, -0.357, -0.184`) — and steps toward the best target one
+  atomic move per tick (`AI_TICK = 110ms`) so the play is watchable. A pulsing
+  "GLM-5.2 IS PLAYING" badge appears while the AI drives.
 
 ---
 
